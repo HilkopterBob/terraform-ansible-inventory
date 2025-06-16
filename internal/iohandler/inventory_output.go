@@ -36,8 +36,11 @@ func outputYAML(inv *inventory.Inventory) error {
 		Children: make(map[string]*groupYAML),
 	}
 
-	// add hosts
+	// add hosts that are not part of any group
 	for _, h := range inv.Hosts {
+		if len(h.Groups) > 0 {
+			continue
+		}
 		hostVars := make(map[string]string)
 		for k, v := range h.Variables {
 			hostVars[k] = v
@@ -131,13 +134,19 @@ func outputINIInventory(inv *inventory.Inventory) error {
 	sort.Strings(groups)
 
 	// hosts not in any group -> all
-	out += "[all]\n"
+	ungroupedCount := 0
 	for _, h := range inv.Hosts {
 		if len(h.Groups) == 0 {
+			if ungroupedCount == 0 {
+				out += "[all]\n"
+			}
 			out += formatHostINI(h) + "\n"
+			ungroupedCount++
 		}
 	}
-	out += "\n"
+	if ungroupedCount > 0 {
+		out += "\n"
+	}
 
 	for _, gname := range groups {
 		g := inv.Groups[gname]
@@ -183,7 +192,16 @@ func formatHostINI(h *inventory.Host) string {
 }
 
 func outputJSONInventory(inv *inventory.Inventory) error {
+	filtered := &inventory.Inventory{
+		Hosts:  make(map[string]*inventory.Host),
+		Groups: inv.Groups,
+	}
+	for name, h := range inv.Hosts {
+		if len(h.Groups) == 0 {
+			filtered.Hosts[name] = h
+		}
+	}
 	enc := json.NewEncoder(stdoutWrapper{})
 	enc.SetIndent("", "  ")
-	return enc.Encode(inv)
+	return enc.Encode(filtered)
 }
