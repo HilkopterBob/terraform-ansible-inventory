@@ -98,5 +98,5 @@ terraform-ansible-inventory \
 
 ## 📄 License
 
-MIT © Nick von Podewils
+Apache-2.0 © Nick von Podewils
 
