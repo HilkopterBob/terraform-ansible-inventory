@@ -14,6 +14,7 @@ To generate usable state data you **must** manage your inventory with the
 `ansible/ansible` provider. Once the provider has written hosts and groups into
 your state file, this tool can consume it and output Ansible formatted data.
 
+
 ## Features
 
 - **Streaming JSON parsing** for huge state files without high memory use.
