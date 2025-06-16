@@ -43,10 +43,13 @@ func outputYAML(inv *inventory.Inventory) error {
 		}
 	}
 
-	// add hosts
+	// add hosts that are not part of a group
 	hostNames := sortedKeys(inv.Hosts)
 	for _, name := range hostNames {
 		h := inv.Hosts[name]
+		if len(h.Groups) > 0 {
+			continue
+		}
 		hostVars := make(map[string]string)
 		for k, v := range h.Variables {
 			hostVars[k] = v
