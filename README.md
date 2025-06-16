@@ -2,6 +2,8 @@
 
 A high-performance, zero-dependency Go command-line tool for extracting Ansible host definitions from deeply nested Terraform state (or any large JSON), and emitting them in various formats (JSON, INI, TXT, or native Ansible inventory).
 
+For extensive usage guides see the [docs directory](docs/) which also powers the GitHub Pages site.
+
 ---
 
 ## 🔍 Features
