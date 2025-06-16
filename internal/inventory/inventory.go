@@ -7,6 +7,10 @@ type Inventory struct {
 	Groups map[string]*Group
 }
 
+// TODO: The provider exposes additional fields (like inventory level vars and
+// host group relationships) that are not currently represented here. Extend
+// this structure accordingly.
+
 type Host struct {
 	Name      string
 	Variables map[string]string
@@ -48,6 +52,8 @@ func (inv *Inventory) AddHost(h *Host) {
 		grp := inv.Groups[g]
 		grp.Hosts = append(grp.Hosts, h.Name)
 	}
+	// TODO: Support additional host attributes provided by the Terraform
+	// provider, such as enabled/disabled state and arbitrary metadata.
 }
 
 // AddGroup adds or updates a group.
@@ -60,6 +66,8 @@ func (inv *Inventory) AddGroup(g *Group) {
 	for _, child := range g.Children {
 		inv.ensureGroup(child)
 	}
+	// TODO: Group attributes like parents defined via separate resources
+	// should be merged here when parsing newer provider versions.
 }
 
 func (inv *Inventory) ensureGroup(name string) *Group {

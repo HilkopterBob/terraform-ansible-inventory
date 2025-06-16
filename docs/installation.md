@@ -18,3 +18,6 @@ go build -o terraform-ansible-inventory ./main.go
 ```bash
 go install github.com/HilkopterBob/terraform-ansible-inventory@latest
 ```
+
+<!-- TODO: Update installation instructions once the CLI includes new
+dependencies or build steps. -->

@@ -21,3 +21,6 @@ terraform-ansible-inventory -i state.json -f txt > hosts.txt
 # Native Ansible inventory
 terraform-ansible-inventory -i state.json -f ansible
 ```
+
+<!-- TODO: document new filtering flags and extended provider support when
+available -->
