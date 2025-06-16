@@ -2,50 +2,60 @@
 
 ## About
 
-`terraform-ansible-inventory` is a lightweight CLI that extracts host and group information from Terraform state files produced by the `ansible/ansible` provider. It was created to provide a reliable way to generate dynamic inventories directly from Terraform.
+`terraform-ansible-inventory` is a small Go CLI for converting Terraform state
+into complete Ansible inventories. The tool was created to work with the
+`ansible/ansible` Terraform provider which stores hosts, groups and variables in
+the state file. RedHat also provides a dynamic inventory plugin that reads
+Terraform state, but it cannot handle child modules and therefore misses large
+parts of real-world configurations. This CLI parses the state directly and
+fully supports nested modules so you can build inventories reliably.
 
-The dynamic inventory plugin shipped by Red Hat lacks support for child modules and complex states, so it often fails on real projects. This tool understands nested modules and produces complete inventories with minimal effort.
+To generate usable state data you **must** manage your inventory with the
+`ansible/ansible` provider. Once the provider has written hosts and groups into
+your state file, this tool can consume it and output Ansible formatted data.
+
 
 ## Features
 
-- **Streaming JSON parsing** for huge state files with very low memory consumption
-- Handles `yaml`, `ini`, `json`, plain text, and native Ansible inventory output
-- Supports custom JSON dot-paths for hostnames and IP addresses
-- Automatically strips CIDR suffixes when generating `ansible_host` variables
-- Full awareness of all resources emitted by the `ansible/ansible` provider, including host groups and inventory variables
-- Recognises group hierarchy and child modules in the state
-- Simple CLI interface with sensible defaults and a built-in help message
-- Includes smoke test data and CI workflow for reliability
+- **Streaming JSON parsing** for huge state files without high memory use.
+- **Multiple output formats**: `yaml`, `ini`, `json` and native Ansible
+  inventory.
+- **Understands provider resources**: host variables, group hierarchy and
+  inventory level variables from the `ansible/ansible` provider.
+- **Child module aware**: traverses nested modules to pick up all resources.
+- **Built-in IP/CIDR handling** so exported addresses work directly in Ansible.
+- **Clean CLI interface** with automatic `--help` and sensible defaults.
+- **No external runtime dependencies** other than the Go binary itself.
+- **CI ready**: sample state file and GitHub Actions workflow included.
+- Filter output by host or group using `--host` and `--group` flags.
 
 ## Installation
 
-A recent Go toolchain is the only requirement.
+Clone and build from source or grab a prebuilt binary from the
+[releases page](https://github.com/HilkopterBob/terraform-ansible-inventory/releases):
 
 ```bash
-# Clone and build from source
+# Build from source
 git clone https://github.com/HilkopterBob/terraform-ansible-inventory.git
 cd terraform-ansible-inventory
 
 go build -o terraform-ansible-inventory ./main.go
-```
 
-You can also install globally:
-
-```bash
+# (Optional) install globally
 go install github.com/HilkopterBob/terraform-ansible-inventory@latest
 ```
 
-Pre-built binaries are available on the [releases page](https://github.com/HilkopterBob/terraform-ansible-inventory/releases) for direct download.
+Download the latest release if you prefer not to build the binary yourself.
 
 ## Usage
 
-Run with `--help` to see all options:
+Run the executable with `--help` to see all options:
 
 ```bash
 terraform-ansible-inventory --help
 ```
 
-Common examples:
+Common examples assuming your state file is `state.json`:
 
 ```bash
 # YAML inventory
@@ -54,18 +64,20 @@ terraform-ansible-inventory -i state.json -f yaml > inventory.yml
 # INI inventory
 terraform-ansible-inventory -i state.json -f ini > inventory.ini
 
-# JSON inventory
+# JSON machine readable form
 terraform-ansible-inventory -i state.json -f json > inventory.json
 
-# Native Ansible format
+# Native Ansible inventory
 terraform-ansible-inventory -i state.json -f ansible
 ```
 
-Inventory can be limited to particular hosts or groups via the `--host` and `--group` flags.
+You can restrict output to specific hosts or groups using the `--host` and
+`--group` flags. Multiple values are allowed.
 
-## Advanced Configuration
+## Advanced configuration
 
-Customise the JSON paths used for hostnames and IPs:
+You can override the JSON paths for hostnames and IP addresses if your state
+uses custom keys:
 
 ```bash
 terraform-ansible-inventory \
@@ -75,11 +87,5 @@ terraform-ansible-inventory \
   --ip-field "values.vars.primary_ip"
 ```
 
-## Important Notes
-
-This tool expects your Terraform state to contain the resources exported by the `ansible/ansible` provider. You must use that provider in your Terraform configuration so the necessary host and group data is written to the state file.
-
-## Motivation
-
-The goal of this project is to make it easy to build accurate Ansible inventories from Terraform. Red Hat's official dynamic inventory plugin cannot parse states containing child modules and therefore misses many resources. `terraform-ansible-inventory` parses the state directly and supports complex module layouts, giving you a complete and reliable inventory every time.
-
+Inventory-level variables and group resources emitted by the provider are
+automatically detected and included in the generated inventory.
