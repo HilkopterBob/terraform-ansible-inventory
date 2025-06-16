@@ -9,6 +9,6 @@ This site provides detailed instructions for installing, using and extending the
 - [Usage](usage.md)
 - [Advanced Configuration](advanced.md)
 
-<!-- TODO: Expand docs with examples covering host groups and advanced
-inventory features once rework is complete. -->
+Additional examples demonstrating host groups and inventory level variables are
+available in the [usage guide](usage.md).
 

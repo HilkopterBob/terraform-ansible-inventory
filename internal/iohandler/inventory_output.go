@@ -18,8 +18,6 @@ type groupYAML struct {
 
 // OutputInventory dispatches YAML or INI inventory output.
 func OutputInventory(inv *inventory.Inventory, format string) error {
-	// TODO: Add export formats that mirror Ansible's inventory plugins and
-	// ensure parity with the provider's data model.
 	switch format {
 	case "json":
 		return outputJSONInventory(inv)
@@ -38,12 +36,17 @@ func outputYAML(inv *inventory.Inventory) error {
 		Children: make(map[string]*groupYAML),
 	}
 
-	// TODO: Review this structure against Ansible's YAML inventory
-	// specification. The current output may not cover all supported
-	// attributes like group-level vars or nested hostvars.
+	if len(inv.Vars) > 0 {
+		root.Vars = make(map[string]string)
+		for k, v := range inv.Vars {
+			root.Vars[k] = v
+		}
+	}
 
 	// add hosts
-	for _, h := range inv.Hosts {
+	hostNames := sortedKeys(inv.Hosts)
+	for _, name := range hostNames {
+		h := inv.Hosts[name]
 		hostVars := make(map[string]string)
 		for k, v := range h.Variables {
 			hostVars[k] = v
@@ -60,7 +63,9 @@ func outputYAML(inv *inventory.Inventory) error {
 	}
 
 	// prepare groups recursively
-	for _, g := range inv.Groups {
+	groupNames := sortedKeys(inv.Groups)
+	for _, gname := range groupNames {
+		g := inv.Groups[gname]
 		gy := ensureGroupYAML(root, g.Name)
 		if len(g.Variables) > 0 {
 			if gy.Vars == nil {
@@ -130,43 +135,46 @@ func index(s string, c byte) int {
 func outputINIInventory(inv *inventory.Inventory) error {
 	var out string
 
-	// TODO: Rework INI generation to produce valid Ansible inventory
-	// syntax including group nesting and host variable sections.
-
-	groups := make([]string, 0, len(inv.Groups))
-	for name := range inv.Groups {
-		groups = append(groups, name)
-	}
-	sort.Strings(groups)
+	groups := sortedKeys(inv.Groups)
 
 	// hosts not in any group -> all
 	out += "[all]\n"
-	for _, h := range inv.Hosts {
+	hostNames := sortedKeys(inv.Hosts)
+	for _, name := range hostNames {
+		h := inv.Hosts[name]
 		if len(h.Groups) == 0 {
 			out += formatHostINI(h) + "\n"
 		}
 	}
 	out += "\n"
 
+	if len(inv.Vars) > 0 {
+		out += "[all:vars]\n"
+		for _, k := range sortedMapKeys(inv.Vars) {
+			out += fmt.Sprintf("%s=%s\n", k, inv.Vars[k])
+		}
+		out += "\n"
+	}
+
 	for _, gname := range groups {
 		g := inv.Groups[gname]
 		if len(g.Hosts) > 0 {
 			out += fmt.Sprintf("[%s]\n", gname)
-			for _, h := range g.Hosts {
-				out += h + "\n"
+			for _, hname := range sortedSlice(g.Hosts) {
+				out += formatHostINI(inv.Hosts[hname]) + "\n"
 			}
 			out += "\n"
 		}
 		if len(g.Variables) > 0 {
 			out += fmt.Sprintf("[%s:vars]\n", gname)
-			for k, v := range g.Variables {
-				out += fmt.Sprintf("%s=%s\n", k, v)
+			for _, k := range sortedMapKeys(g.Variables) {
+				out += fmt.Sprintf("%s=%s\n", k, g.Variables[k])
 			}
 			out += "\n"
 		}
 		if len(g.Children) > 0 {
 			out += fmt.Sprintf("[%s:children]\n", gname)
-			for _, c := range g.Children {
+			for _, c := range sortedSlice(g.Children) {
 				out += c + "\n"
 			}
 			out += "\n"
@@ -188,8 +196,12 @@ func formatHostINI(h *inventory.Host) string {
 		}
 		line += fmt.Sprintf(" %s=%s", k, v)
 	}
-	// TODO: include all supported host parameters from the provider when
-	// formatting the INI entry.
+	if !h.Enabled {
+		line += " ansible_disabled=true"
+	}
+	for k, v := range h.Metadata {
+		line += fmt.Sprintf(" %s=%s", k, v)
+	}
 	return line
 }
 
@@ -197,4 +209,28 @@ func outputJSONInventory(inv *inventory.Inventory) error {
 	enc := json.NewEncoder(stdoutWrapper{})
 	enc.SetIndent("", "  ")
 	return enc.Encode(inv)
+}
+
+func sortedKeys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sortedSlice(in []string) []string {
+	out := append([]string(nil), in...)
+	sort.Strings(out)
+	return out
+}
+
+func sortedMapKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

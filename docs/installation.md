@@ -19,5 +19,5 @@ go build -o terraform-ansible-inventory ./main.go
 go install github.com/HilkopterBob/terraform-ansible-inventory@latest
 ```
 
-<!-- TODO: Update installation instructions once the CLI includes new
-dependencies or build steps. -->
+The project has no external dependencies beyond Go itself. Simply ensure a
+recent Go toolchain is installed before building.

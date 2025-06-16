@@ -12,5 +12,5 @@ terraform-ansible-inventory \
 
 Use this when your Terraform state stores host information under custom keys.
 
-<!-- TODO: document provider-specific options like host groups and inventory
-level variables when implemented -->
+The provider exposes resources for groups and inventory level variables. These
+are automatically detected and included in the generated inventory.

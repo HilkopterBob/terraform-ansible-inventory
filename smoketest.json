@@ -1,25 +1,32 @@
 {
-    "values": {
-        "root_module": {
-            "child_modules": [
-                {
-                    "resources": [
-                        {
-                            "type": "ansible_host",
-                            "values": {
-                                "name": "test1",
-                                "variables": {
-                                    "ip": "192.168.1.10/24"
-                                }
-                            }
-                        },
-                        {
-                            "type": "other",
-                            "values": {}
-                        }
-                    ]
-                }
-            ]
+  "values": {
+    "root_module": {
+      "resources": [
+        {
+          "type": "ansible_inventory",
+          "values": {
+            "variables": {"env": "test"}
+          }
+        },
+        {
+          "type": "ansible_group",
+          "values": {
+            "name": "web",
+            "variables": {"tier": "frontend"}
+          }
+        },
+        {
+          "type": "ansible_host",
+          "values": {
+            "name": "test1",
+            "groups": ["web"],
+            "variables": {
+              "ip": "192.168.1.10/24",
+              "os": "linux"
+            }
+          }
         }
+      ]
     }
+  }
 }

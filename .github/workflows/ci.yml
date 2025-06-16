@@ -20,6 +20,11 @@ jobs:
         run: go build -v ./...
       - name: Test
         run: go test -v ./...
+      - name: Smoke test
+        run: |
+          go build -o terraform-ansible-inventory
+          ./terraform-ansible-inventory -i smoketest.json -f yaml > /tmp/out.yml
+          grep -q test1 /tmp/out.yml
 
   release:
     needs: build
