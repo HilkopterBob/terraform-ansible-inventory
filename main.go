@@ -17,9 +17,9 @@ const version = "v1.0.0"
 func main() {
 	app := &cli.App{
 		Name:      "terraform-ansible-inventory",
-		Usage:     "Extract ansible_host entries from a Terraform state JSON",
+		Usage:     "Generate an Ansible inventory from a Terraform state produced by the ansible/ansible provider",
 		Version:   version,
-		ArgsUsage: "--input <file> [--format json|ini|txt|ansible] [--host-field path] [--ip-field path]",
+		ArgsUsage: "--input <file> [--format yaml|ini|json]",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "input",
@@ -30,18 +30,8 @@ func main() {
 			&cli.StringFlag{
 				Name:    "format",
 				Aliases: []string{"f"},
-				Value:   "json",
-				Usage:   "Output format: json, ini, txt, ansible",
-			},
-			&cli.StringFlag{
-				Name:  "host-field",
-				Value: "values.name",
-				Usage: "Dot-path to hostname in each object (e.g. values.name)",
-			},
-			&cli.StringFlag{
-				Name:  "ip-field",
-				Value: "values.variables.ip",
-				Usage: "Dot-path to IP in each object (e.g. values.variables.ip)",
+				Value:   "yaml",
+				Usage:   "Output format: yaml, ini, or json",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -58,24 +48,12 @@ func main() {
 				return fmt.Errorf("failed to read %q: %w", path, err)
 			}
 
-			// 2) Extract ansible_host objects
-			objects := parser.ExtractAnsibleHosts(data)
-			if len(objects) == 0 {
-				// still valid: empty slice ⇒ outputs "[]" or nothing in ansible mode
-			}
+			// 2) Parse inventory from Terraform state
+			inv := parser.ParseInventory(data)
 
 			// 3) Dispatch output
 			format := strings.ToLower(c.String("format"))
-			switch format {
-			case "ansible":
-				return iohandler.OutputAnsibleInventory(
-					objects,
-					c.String("host-field"),
-					c.String("ip-field"),
-				)
-			default:
-				return iohandler.Output(objects, format)
-			}
+			return iohandler.OutputInventory(inv, format)
 		},
 		CustomAppHelpTemplate: `{{.Name}} {{.Version}}
 
@@ -88,12 +66,10 @@ FLAGS:
 {{range .VisibleFlags}}{{.}}
 {{end}}
 EXAMPLES:
-   # JSON array of all ansible_host objects
-   {{.HelpName}} --input terraform_state.json
-   # INI-style output
+   # YAML inventory
+   {{.HelpName}} --input terraform_state.json -f yaml
+   # INI inventory
    {{.HelpName}} -i terraform_state.json -f ini
-   # One-line Ansible inventory
-   {{.HelpName}} -i terraform_state.json -f ansible
 `,
 	}
 
