@@ -18,6 +18,8 @@ type groupYAML struct {
 
 // OutputInventory dispatches YAML or INI inventory output.
 func OutputInventory(inv *inventory.Inventory, format string) error {
+	// TODO: Add export formats that mirror Ansible's inventory plugins and
+	// ensure parity with the provider's data model.
 	switch format {
 	case "json":
 		return outputJSONInventory(inv)
@@ -35,6 +37,10 @@ func outputYAML(inv *inventory.Inventory) error {
 		Hosts:    make(map[string]any),
 		Children: make(map[string]*groupYAML),
 	}
+
+	// TODO: Review this structure against Ansible's YAML inventory
+	// specification. The current output may not cover all supported
+	// attributes like group-level vars or nested hostvars.
 
 	// add hosts
 	for _, h := range inv.Hosts {
@@ -124,6 +130,9 @@ func index(s string, c byte) int {
 func outputINIInventory(inv *inventory.Inventory) error {
 	var out string
 
+	// TODO: Rework INI generation to produce valid Ansible inventory
+	// syntax including group nesting and host variable sections.
+
 	groups := make([]string, 0, len(inv.Groups))
 	for name := range inv.Groups {
 		groups = append(groups, name)
@@ -179,6 +188,8 @@ func formatHostINI(h *inventory.Host) string {
 		}
 		line += fmt.Sprintf(" %s=%s", k, v)
 	}
+	// TODO: include all supported host parameters from the provider when
+	// formatting the INI entry.
 	return line
 }
 

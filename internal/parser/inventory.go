@@ -7,6 +7,12 @@ import (
 	"github.com/buger/jsonparser"
 )
 
+// TODO: Expand parsing logic to cover all resources exposed by the
+// ansible/ansible Terraform provider. This currently only understands
+// ansible_host and ansible_group, but the provider includes additional
+// resources such as group membership and inventory level variables that
+// should be reflected in the Inventory structure.
+
 // ParseInventory walks the Terraform state JSON and extracts all ansible_host
 // and ansible_group resources, returning a structured Inventory.
 func ParseInventory(data []byte) *inventory.Inventory {
@@ -19,6 +25,8 @@ func ParseInventory(data []byte) *inventory.Inventory {
 
 		// Determine if this object is a resource we care about
 		if t, err := jsonparser.GetString(current, "type"); err == nil {
+			// TODO: Handle additional resource types emitted by the
+			// Terraform provider once they are added.
 			switch t {
 			case "ansible_host":
 				var tmp struct {
