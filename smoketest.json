@@ -1,0 +1,25 @@
+{
+    "values": {
+        "root_module": {
+            "child_modules": [
+                {
+                    "resources": [
+                        {
+                            "type": "ansible_host",
+                            "values": {
+                                "name": "test1",
+                                "variables": {
+                                    "ip": "192.168.1.10/24"
+                                }
+                            }
+                        },
+                        {
+                            "type": "other",
+                            "values": {}
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

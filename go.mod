@@ -1,5 +1,14 @@
-module github.com/HilkopterBob/teraform-ansible-inventory
+module github.com/HilkopterBob/terraform-ansible-inventory
 
 go 1.24.1
 
-require github.com/buger/jsonparser v1.1.1
+require (
+	github.com/buger/jsonparser v1.1.1
+	github.com/urfave/cli/v2 v2.27.7
+)
+
+require (
+	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
+)

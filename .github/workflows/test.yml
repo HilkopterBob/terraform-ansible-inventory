@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   push:
@@ -11,9 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-      - name: Run tests
+        with: { go-version: '1.22' }
+      - name: Run unit tests
         run: go test -v ./...
+      - name: Smoke test
+        run: |
+          echo 'Running smoke test...'
+          terraform-ansible-inventory -i smoketest.json -f ansible \
+            | grep -q "test1 ansible_host=192.168.1.10"
