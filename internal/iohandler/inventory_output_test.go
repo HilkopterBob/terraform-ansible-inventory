@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/HilkopterBob/terraform-ansible-inventory/internal/inventory"
+	"gopkg.in/yaml.v3"
 )
 
 func invFixture() *inventory.Inventory {
@@ -41,8 +42,34 @@ func TestOutputInventoryYAML(t *testing.T) {
 	if err != nil {
 		t.Fatalf("yaml output error: %v", err)
 	}
-	if !strings.Contains(out, "test1:") || !strings.Contains(out, "env:") {
-		t.Fatalf("unexpected yaml output: %s", out)
+	var data map[string]any
+	if err := yaml.Unmarshal([]byte(out), &data); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	all, ok := data["all"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing all group")
+	}
+	if hosts, ok := all["hosts"].(map[string]any); ok {
+		if _, dup := hosts["test1"]; dup {
+			t.Fatalf("host present in all.hosts")
+		}
+	}
+	children, ok := all["children"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing children")
+	}
+	web, ok := children["web"].(map[string]any)
+	if !ok {
+		t.Fatalf("web group missing")
+	}
+	wh, ok := web["hosts"].(map[string]any)
+	if !ok || wh["test1"] == nil {
+		t.Fatalf("test1 missing from web group")
+	}
+	vars, _ := all["vars"].(map[string]any)
+	if vars["env"] != "test" {
+		t.Fatalf("inventory vars missing")
 	}
 }
 
@@ -54,5 +81,10 @@ func TestOutputInventoryINI(t *testing.T) {
 	}
 	if !strings.Contains(out, "[web]") || !strings.Contains(out, "ansible_host=192.168.1.10") {
 		t.Fatalf("unexpected ini output:\n%s", out)
+	}
+	idxHost := strings.Index(out, "test1 ansible_host")
+	idxGrp := strings.Index(out, "[web]")
+	if idxHost != -1 && idxGrp != -1 && idxHost < idxGrp {
+		t.Fatalf("host appears in [all] section:\n%s", out)
 	}
 }
