@@ -5,16 +5,26 @@ package inventory
 type Inventory struct {
 	Hosts  map[string]*Host
 	Groups map[string]*Group
+	Vars   map[string]string
 }
 
-// TODO: The provider exposes additional fields (like inventory level vars and
-// host group relationships) that are not currently represented here. Extend
-// this structure accordingly.
+// AddVars merges the provided variables with any existing inventory level
+// variables.
+func (inv *Inventory) AddVars(v map[string]string) {
+	if inv.Vars == nil {
+		inv.Vars = make(map[string]string)
+	}
+	for k, val := range v {
+		inv.Vars[k] = val
+	}
+}
 
 type Host struct {
 	Name      string
 	Variables map[string]string
 	Groups    []string
+	Enabled   bool
+	Metadata  map[string]string
 }
 
 type Group struct {
@@ -22,6 +32,7 @@ type Group struct {
 	Variables map[string]string
 	Children  []string
 	Hosts     []string
+	Parents   []string
 }
 
 // New creates an empty Inventory structure.
@@ -29,6 +40,7 @@ func New() *Inventory {
 	return &Inventory{
 		Hosts:  make(map[string]*Host),
 		Groups: make(map[string]*Group),
+		Vars:   make(map[string]string),
 	}
 }
 
@@ -40,9 +52,23 @@ func (inv *Inventory) AddHost(h *Host) {
 			existing.Variables[k] = v
 		}
 		existing.Groups = append(existing.Groups, h.Groups...)
+		if h.Metadata != nil {
+			if existing.Metadata == nil {
+				existing.Metadata = make(map[string]string)
+			}
+			for k, v := range h.Metadata {
+				existing.Metadata[k] = v
+			}
+		}
+		if h.Enabled {
+			existing.Enabled = h.Enabled
+		}
 	} else {
 		if h.Variables == nil {
 			h.Variables = make(map[string]string)
+		}
+		if h.Metadata == nil {
+			h.Metadata = make(map[string]string)
 		}
 		inv.Hosts[h.Name] = h
 	}
@@ -52,8 +78,6 @@ func (inv *Inventory) AddHost(h *Host) {
 		grp := inv.Groups[g]
 		grp.Hosts = append(grp.Hosts, h.Name)
 	}
-	// TODO: Support additional host attributes provided by the Terraform
-	// provider, such as enabled/disabled state and arbitrary metadata.
 }
 
 // AddGroup adds or updates a group.
@@ -66,8 +90,17 @@ func (inv *Inventory) AddGroup(g *Group) {
 	for _, child := range g.Children {
 		inv.ensureGroup(child)
 	}
-	// TODO: Group attributes like parents defined via separate resources
-	// should be merged here when parsing newer provider versions.
+	grp.Parents = append(grp.Parents, g.Parents...)
+	grp.Hosts = append(grp.Hosts, g.Hosts...)
+	for _, h := range g.Hosts {
+		if host, ok := inv.Hosts[h]; ok {
+			if !contains(host.Groups, g.Name) {
+				host.Groups = append(host.Groups, g.Name)
+			}
+		} else {
+			inv.AddHost(&Host{Name: h, Groups: []string{g.Name}})
+		}
+	}
 }
 
 func (inv *Inventory) ensureGroup(name string) *Group {
@@ -80,4 +113,82 @@ func (inv *Inventory) ensureGroup(name string) *Group {
 	}
 	inv.Groups[name] = g
 	return g
+}
+
+func contains(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func copyMap(src map[string]string) map[string]string {
+	if src == nil {
+		return nil
+	}
+	m := make(map[string]string, len(src))
+	for k, v := range src {
+		m[k] = v
+	}
+	return m
+}
+
+// CopyFiltered creates a new inventory containing only the specified hosts and
+// groups. Empty slices mean no filtering on that dimension.
+func (inv *Inventory) CopyFiltered(hosts, groups []string) *Inventory {
+	hostSet := make(map[string]bool)
+	for _, h := range hosts {
+		hostSet[h] = true
+	}
+	groupSet := make(map[string]bool)
+	for _, g := range groups {
+		groupSet[g] = true
+	}
+
+	out := New()
+	out.AddVars(inv.Vars)
+
+	for name, h := range inv.Hosts {
+		if len(hostSet) > 0 && !hostSet[name] {
+			continue
+		}
+		if len(groupSet) > 0 {
+			ok := false
+			for _, g := range h.Groups {
+				if groupSet[g] {
+					ok = true
+					break
+				}
+			}
+			if !ok {
+				continue
+			}
+		}
+		nh := &Host{
+			Name:      h.Name,
+			Variables: copyMap(h.Variables),
+			Metadata:  copyMap(h.Metadata),
+			Groups:    append([]string(nil), h.Groups...),
+			Enabled:   h.Enabled,
+		}
+		out.AddHost(nh)
+	}
+
+	for name, g := range inv.Groups {
+		if len(groupSet) > 0 && !groupSet[name] {
+			continue
+		}
+		ng := &Group{
+			Name:      g.Name,
+			Variables: copyMap(g.Variables),
+			Children:  append([]string(nil), g.Children...),
+			Hosts:     append([]string(nil), g.Hosts...),
+			Parents:   append([]string(nil), g.Parents...),
+		}
+		out.AddGroup(ng)
+	}
+
+	return out
 }

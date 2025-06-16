@@ -22,5 +22,5 @@ terraform-ansible-inventory -i state.json -f txt > hosts.txt
 terraform-ansible-inventory -i state.json -f ansible
 ```
 
-<!-- TODO: document new filtering flags and extended provider support when
-available -->
+You can restrict the output to specific hosts or groups using the `--host` and
+`--group` flags. Multiple values may be provided.

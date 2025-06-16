@@ -6,5 +6,5 @@
 - Strips CIDR suffixes automatically when generating inventories.
 - Clean CLI interface with sensible defaults.
 - Includes a smoke test JSON example and CI workflow.
-- **TODO:** Describe upcoming support for all provider resources and improved
-  YAML/INI export once implemented.
+- Full support for all resources emitted by the `ansible/ansible` provider
+  including host groups and inventory level variables.

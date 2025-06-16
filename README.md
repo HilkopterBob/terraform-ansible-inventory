@@ -14,8 +14,8 @@ For extensive usage guides see the [docs directory](docs/) which also powers the
 - **Built-in IP/CIDR handling**: Strips CIDR suffix for `ansible_host` variables.
 - **Clean CLI interface**: Automatic `--help` message, sensible defaults.
 - **CI/CD ready**: Smoke-test JSON example and GitHub Actions for build & test.
-- **TODO**: Update documentation once full provider feature set and new output
-  formats are implemented.
+- **Full provider support**: Handles inventory-level variables, group
+  hierarchies and host metadata exported by the provider.
 
 ---
 

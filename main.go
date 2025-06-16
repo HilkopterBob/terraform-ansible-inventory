@@ -20,9 +20,6 @@ func main() {
 		Usage:     "Generate an Ansible inventory from a Terraform state produced by the ansible/ansible provider",
 		Version:   version,
 		ArgsUsage: "--input <file> [--format yaml|ini|json]",
-		// TODO: Add CLI flags for filtering hosts/groups and for
-		// selecting output formats like YAML or INI according to the
-		// full capabilities of the ansible/ansible provider.
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:     "input",
@@ -35,6 +32,14 @@ func main() {
 				Aliases: []string{"f"},
 				Value:   "yaml",
 				Usage:   "Output format: yaml, ini, or json",
+			},
+			&cli.StringSliceFlag{
+				Name:  "host",
+				Usage: "Only include the specified host(s)",
+			},
+			&cli.StringSliceFlag{
+				Name:  "group",
+				Usage: "Only include hosts belonging to the specified group(s)",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -54,11 +59,15 @@ func main() {
 			// 2) Parse inventory from Terraform state
 			inv := parser.ParseInventory(data)
 
-			// 3) Dispatch output
+			// 3) Apply filters
+			hosts := c.StringSlice("host")
+			groups := c.StringSlice("group")
+			if len(hosts) > 0 || len(groups) > 0 {
+				inv = inv.CopyFiltered(hosts, groups)
+			}
+
+			// 4) Dispatch output
 			format := strings.ToLower(c.String("format"))
-			// TODO: support additional output styles (e.g. split
-			// inventories by group) once provider parity is
-			// implemented.
 			return iohandler.OutputInventory(inv, format)
 		},
 		CustomAppHelpTemplate: `{{.Name}} {{.Version}}
