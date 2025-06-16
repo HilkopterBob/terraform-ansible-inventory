@@ -11,8 +11,8 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Test Data
-*.json
+# Prod Data
+terraform_state.json
 
 # Code coverage profiles and other test artifacts
 *.out
