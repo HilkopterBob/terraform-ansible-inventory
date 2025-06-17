@@ -98,6 +98,98 @@ terraform-ansible-inventory -i state.json -f json > inventory.json
 terraform-ansible-inventory -i state.json -f ansible
 ```
 
+### Example HCL and Generated Inventory
+
+Below is a small Terraform snippet demonstrating how hosts and groups are
+defined with the `ansible/ansible` provider:
+
+```hcl
+resource "ansible_inventory" "default" {
+  variables = {
+    env = "prod"
+  }
+}
+
+resource "ansible_group" "web" {
+  name = "web"
+  variables = {
+    tier = "frontend"
+  }
+}
+
+resource "ansible_host" "test1" {
+  name   = "test1"
+  groups = [ansible_group.web.name]
+  variables = {
+    ip = "192.168.1.10"
+    os = "linux"
+  }
+}
+```
+
+Running the CLI against the state generated from this configuration yields:
+
+**YAML**
+
+```yaml
+all:
+  vars:
+    env: prod
+  children:
+    web:
+      hosts:
+        test1:
+          ansible_host: 192.168.1.10
+          os: linux
+      vars:
+        tier: frontend
+```
+
+**INI**
+
+```ini
+[all]
+
+[all:vars]
+env=prod
+
+[web]
+test1 ansible_host=192.168.1.10 os=linux ansible_disabled=true
+
+[web:vars]
+tier=frontend
+```
+
+**JSON**
+
+```json
+{
+  "Hosts": {
+    "test1": {
+      "Name": "test1",
+      "Variables": {
+        "ip": "192.168.1.10",
+        "os": "linux"
+      },
+      "Groups": ["web"],
+      "Enabled": false,
+      "Metadata": {}
+    }
+  },
+  "Groups": {
+    "web": {
+      "Name": "web",
+      "Variables": {"tier": "frontend"},
+      "Children": null,
+      "Hosts": ["test1"],
+      "Parents": null
+    }
+  },
+  "Vars": {"env": "prod"}
+}
+```
+
+
 You can restrict output to specific hosts or groups using the `--host` and
 `--group` flags. Multiple values are allowed.
 

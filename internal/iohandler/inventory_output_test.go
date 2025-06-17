@@ -116,6 +116,65 @@ func TestYAMLvsINIParity(t *testing.T) {
 		t.Fatalf("ini output missing host ip:\n%s", iniOut)
 	}
 }
+func TestINIYAMLJSONParity(t *testing.T) {
+	inv := invFixture()
+	yamlOut, err := captureOutput(func() error { return OutputInventory(inv, "yaml") })
+	if err != nil {
+		t.Fatalf("yaml output error: %v", err)
+	}
+	iniOut, err := captureOutput(func() error { return OutputInventory(inv, "ini") })
+	if err != nil {
+		t.Fatalf("ini output error: %v", err)
+	}
+	jsonOut, err := captureOutput(func() error { return OutputInventory(inv, "json") })
+	if err != nil {
+		t.Fatalf("json output error: %v", err)
+	}
+
+	// parse YAML output
+	var ydata map[string]any
+	if err := yaml.Unmarshal([]byte(yamlOut), &ydata); err != nil {
+		t.Fatalf("unmarshal yaml: %v", err)
+	}
+	web := ydata["all"].(map[string]any)["children"].(map[string]any)["web"].(map[string]any)
+	yhost := web["hosts"].(map[string]any)["test1"].(map[string]any)
+	yIP := yhost["ansible_host"].(string)
+	yOS := yhost["os"].(string)
+	yInvVar := ydata["all"].(map[string]any)["vars"].(map[string]any)["env"].(string)
+	yGrpVar := web["vars"].(map[string]any)["tier"].(string)
+
+	// parse JSON output
+	var jinv inventory.Inventory
+	if err := json.Unmarshal([]byte(jsonOut), &jinv); err != nil {
+		t.Fatalf("unmarshal json: %v", err)
+	}
+	jh := jinv.Hosts["test1"]
+	jIP := strings.SplitN(jh.Variables["ip"], "/", 2)[0]
+	jOS := jh.Variables["os"]
+	jInvVar := jinv.Vars["env"]
+	jGrpVar := jinv.Groups["web"].Variables["tier"]
+
+	if yIP != jIP || yOS != jOS {
+		t.Fatalf("host variables mismatch yaml vs json")
+	}
+	if yInvVar != jInvVar {
+		t.Fatalf("inventory vars mismatch yaml vs json")
+	}
+	if yGrpVar != jGrpVar {
+		t.Fatalf("group vars mismatch yaml vs json")
+	}
+
+	expectedHost := "test1 ansible_host=" + jIP + " os=" + jOS
+	if !strings.Contains(iniOut, expectedHost) {
+		t.Fatalf("ini output missing host line: %s", expectedHost)
+	}
+	if !strings.Contains(iniOut, "[all:vars]") || !strings.Contains(iniOut, "env="+jInvVar) {
+		t.Fatalf("ini output missing inventory vars")
+	}
+	if !strings.Contains(iniOut, "[web:vars]") || !strings.Contains(iniOut, "tier="+jGrpVar) {
+		t.Fatalf("ini output missing group vars")
+	}
+}
 
 func TestOutputInventoryUnknownFormat(t *testing.T) {
 	inv := inventory.New()
