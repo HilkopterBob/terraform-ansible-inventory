@@ -20,7 +20,7 @@ RedHat's official inventory plugin struggles with nested modules and often misse
 ## 🔍 Features
 
 - **Streaming JSON parsing** for huge state files without high memory use using the `jstream` library.
-- **Multiple output formats**: `yaml`, `ini`, `json` and native Ansible inventory.
+ - **Multiple output formats**: `yaml`, `ini`, and `json`.
 - **Understands provider resources** including host variables and group hierarchy.
 - **Child module aware** so nested modules are fully traversed.
 - **Built-in IP/CIDR handling** for `ansible_host` variables.
