@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 )
@@ -45,5 +46,19 @@ func TestParseInventory(t *testing.T) {
 	}
 	if h, ok := inv.Hosts["host1"]; !ok || h.Variables["ip"] != "10.0.0.1" {
 		t.Fatalf("host parse failed")
+	}
+}
+
+func TestParseInventoryReader(t *testing.T) {
+	state := map[string]any{
+		"type": "ansible_inventory",
+		"values": map[string]any{
+			"variables": map[string]string{"env": "test"},
+		},
+	}
+	buf, _ := json.Marshal(state)
+	inv := ParseInventoryReader(bytes.NewReader(buf))
+	if inv.Vars["env"] != "test" {
+		t.Fatalf("inventory vars not parsed")
 	}
 }

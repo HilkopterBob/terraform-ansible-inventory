@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -79,5 +80,13 @@ func TestExtractAnsibleHostsNone(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Fatalf("expected 0 hosts, got %d", len(got))
+	}
+}
+
+func TestExtractAnsibleHostsReader(t *testing.T) {
+	data := []byte(`{"type":"ansible_host","values":{"name":"r1"}}`)
+	res := ExtractAnsibleHostsReader(bytes.NewReader(data))
+	if len(res) != 1 {
+		t.Fatalf("expected 1 host, got %d", len(res))
 	}
 }
