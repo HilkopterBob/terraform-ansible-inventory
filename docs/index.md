@@ -21,7 +21,7 @@ your state file, this tool can consume it and output Ansible formatted data.
 
 ## Features
 
-- **Streaming JSON parsing** for huge state files without high memory use.
+- **Streaming JSON parsing** for huge state files without high memory use using the `jstream` library.
 - **Multiple output formats**: `yaml`, `ini`, `json` and native Ansible
   inventory.
 - **Understands provider resources**: host variables, group hierarchy and
