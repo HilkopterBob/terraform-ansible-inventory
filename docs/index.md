@@ -22,8 +22,7 @@ your state file, this tool can consume it and output Ansible formatted data.
 ## Features
 
 - **Streaming JSON parsing** for huge state files without high memory use using the `jstream` library.
-- **Multiple output formats**: `yaml`, `ini`, `json` and native Ansible
-  inventory.
+- **Multiple output formats**: `yaml`, `ini`, and `json`.
 - **Understands provider resources**: host variables, group hierarchy and
   inventory level variables from the `ansible/ansible` provider.
 - **Child module aware**: traverses nested modules to pick up all resources.
@@ -192,22 +191,6 @@ tier=frontend
 
 You can restrict output to specific hosts or groups using the `--host` and
 `--group` flags. Multiple values are allowed.
-
-## Advanced configuration
-
-You can override the JSON paths for hostnames and IP addresses if your state
-uses custom keys:
-
-```bash
-terraform-ansible-inventory \
-  --input state.json \
-  --format ansible \
-  --host-field "values.custom_hostname" \
-  --ip-field "values.vars.primary_ip"
-```
-
-Inventory-level variables and group resources emitted by the provider are
-automatically detected and included in the generated inventory.
 
 ## Contributing
 

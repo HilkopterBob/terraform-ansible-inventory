@@ -51,7 +51,11 @@ func (inv *Inventory) AddHost(h *Host) {
 		for k, v := range h.Variables {
 			existing.Variables[k] = v
 		}
-		existing.Groups = append(existing.Groups, h.Groups...)
+		for _, g := range h.Groups {
+			if !contains(existing.Groups, g) {
+				existing.Groups = append(existing.Groups, g)
+			}
+		}
 		if h.Metadata != nil {
 			if existing.Metadata == nil {
 				existing.Metadata = make(map[string]string)
@@ -76,7 +80,9 @@ func (inv *Inventory) AddHost(h *Host) {
 	for _, g := range h.Groups {
 		inv.ensureGroup(g)
 		grp := inv.Groups[g]
-		grp.Hosts = append(grp.Hosts, h.Name)
+		if !contains(grp.Hosts, h.Name) {
+			grp.Hosts = append(grp.Hosts, h.Name)
+		}
 	}
 }
 
@@ -86,12 +92,24 @@ func (inv *Inventory) AddGroup(g *Group) {
 	for k, v := range g.Variables {
 		grp.Variables[k] = v
 	}
-	grp.Children = append(grp.Children, g.Children...)
+	for _, child := range g.Children {
+		if !contains(grp.Children, child) {
+			grp.Children = append(grp.Children, child)
+		}
+	}
 	for _, child := range g.Children {
 		inv.ensureGroup(child)
 	}
-	grp.Parents = append(grp.Parents, g.Parents...)
-	grp.Hosts = append(grp.Hosts, g.Hosts...)
+	for _, p := range g.Parents {
+		if !contains(grp.Parents, p) {
+			grp.Parents = append(grp.Parents, p)
+		}
+	}
+	for _, hname := range g.Hosts {
+		if !contains(grp.Hosts, hname) {
+			grp.Hosts = append(grp.Hosts, hname)
+		}
+	}
 	for _, h := range g.Hosts {
 		if host, ok := inv.Hosts[h]; ok {
 			if !contains(host.Groups, g.Name) {
