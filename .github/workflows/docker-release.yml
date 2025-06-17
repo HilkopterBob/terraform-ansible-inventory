@@ -24,7 +24,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: hilkopterbob
+          username: HilkopterBob
           password: ${{ secrets.GHCR_TOEKN }}
       - name: Build and push image
         uses: docker/build-push-action@v5
