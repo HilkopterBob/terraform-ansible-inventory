@@ -55,7 +55,7 @@ A small container image is published for each release on
 Run it like any other command line tool or inside CI pipelines:
 
 ```bash
-docker run --rm ghcr.io/HilkopterBob/terraform-ansible-inventory:latest --help
+docker run --rm ghcr.io/hilkopterbob/terraform-ansible-inventory:latest --help
 ```
 
 In GitLab CI you must override the image entrypoint so the pipeline script can
@@ -63,7 +63,7 @@ run:
 
 ```yaml
 image:
-  name: ghcr.io/HilkopterBob/terraform-ansible-inventory:latest
+  name: ghcr.io/hilkopterbob/terraform-ansible-inventory:latest
   entrypoint: [""]
 
 generate-inventory:
