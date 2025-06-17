@@ -27,6 +27,7 @@ RedHat's official inventory plugin struggles with nested modules and often misse
 - **Clean CLI interface** with automatic `--help` and sensible defaults.
 - **Zero dependencies** aside from the Go runtime.
 - **CI ready** with smoke test data and GitHub Actions workflow.
+- **Docker image verified** in CI to match the native binary.
 - Filter output by host or group using `--host` and `--group` flags.
 
 ---
@@ -111,7 +112,8 @@ terraform-ansible-inventory -i state.json -f json > inventory.json
 2. Create a feature branch `git checkout -b feature/myfeature`
 3. Add tests under `internal/*_test.go`
 4. Ensure all tests pass
-5. Submit a PR
+5. Optionally build the Docker image and run the smoke test
+6. Submit a PR
 
 ---
 
