@@ -175,3 +175,20 @@ func TestINIYAMLJSONParity(t *testing.T) {
 		t.Fatalf("ini output missing group vars")
 	}
 }
+
+func TestOutputInventoryUnknownFormat(t *testing.T) {
+	inv := inventory.New()
+	err := OutputInventory(inv, "bogus")
+	if err == nil {
+		t.Fatal("expected error for unknown inventory format")
+	}
+}
+
+func TestStripCIDRHelper(t *testing.T) {
+	if stripCIDR("1.2.3.4/32") != "1.2.3.4" {
+		t.Fatalf("stripCIDR failed")
+	}
+	if stripCIDR("1.2.3.4") != "1.2.3.4" {
+		t.Fatalf("stripCIDR modified plain ip")
+	}
+}
