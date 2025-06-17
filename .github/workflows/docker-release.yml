@@ -13,6 +13,9 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+      - name: Set lowercase repo owner
+        id: repo
+        run: echo "owner=$(echo ${GITHUB_REPOSITORY_OWNER} | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -31,5 +34,5 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository_owner }}/terraform-ansible-inventory:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/terraform-ansible-inventory:latest
+            ghcr.io/${{ steps.repo.outputs.owner }}/terraform-ansible-inventory:${{ github.ref_name }}
+            ghcr.io/${{ steps.repo.outputs.owner }}/terraform-ansible-inventory:latest
