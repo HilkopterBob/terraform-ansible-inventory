@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 )
@@ -109,5 +110,19 @@ func TestParseGroupChildrenParents(t *testing.T) {
 	}
 	if _, ok := inv.Hosts["h2"]; !ok {
 		t.Fatalf("host h2 from grand child missing")
+  }
+}
+    
+func TestParseInventoryReader(t *testing.T) {
+	state := map[string]any{
+		"type": "ansible_inventory",
+		"values": map[string]any{
+			"variables": map[string]string{"env": "test"},
+		},
+	}
+	buf, _ := json.Marshal(state)
+	inv := ParseInventoryReader(bytes.NewReader(buf))
+	if inv.Vars["env"] != "test" {
+		t.Fatalf("inventory vars not parsed")
 	}
 }
