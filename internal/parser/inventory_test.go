@@ -47,3 +47,67 @@ func TestParseInventory(t *testing.T) {
 		t.Fatalf("host parse failed")
 	}
 }
+
+func TestParseGroupChildrenParents(t *testing.T) {
+	state := map[string]any{
+		"values": map[string]any{
+			"root_module": map[string]any{
+				"resources": []any{
+					map[string]any{
+						"type": "ansible_group",
+						"values": map[string]any{
+							"name":      "parent",
+							"variables": map[string]string{"role": "p"},
+						},
+					},
+					map[string]any{
+						"type": "ansible_group",
+						"values": map[string]any{
+							"name":     "child",
+							"parents":  []any{"parent"},
+							"hosts":    []any{"h1"},
+							"children": []any{"grand"},
+						},
+					},
+					map[string]any{
+						"type": "ansible_group",
+						"values": map[string]any{
+							"name":  "grand",
+							"hosts": []any{"h2"},
+						},
+					},
+					map[string]any{
+						"type": "ansible_host",
+						"values": map[string]any{
+							"name": "h1",
+						},
+					},
+				},
+			},
+		},
+	}
+	buf, _ := json.Marshal(state)
+	inv := ParseInventory(buf)
+	c, ok := inv.Groups["child"]
+	if !ok {
+		t.Fatalf("child group missing")
+	}
+	foundParent := false
+	for _, p := range c.Parents {
+		if p == "parent" {
+			foundParent = true
+		}
+	}
+	foundChild := false
+	for _, ch := range c.Children {
+		if ch == "grand" {
+			foundChild = true
+		}
+	}
+	if !foundParent || !foundChild {
+		t.Fatalf("child relations missing: %#v", c)
+	}
+	if _, ok := inv.Hosts["h2"]; !ok {
+		t.Fatalf("host h2 from grand child missing")
+	}
+}
