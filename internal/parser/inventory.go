@@ -1,10 +1,12 @@
 package parser
 
 import (
-	"encoding/json"
+	"bytes"
+	"io"
+
+	"github.com/bcicen/jstream"
 
 	"github.com/HilkopterBob/terraform-ansible-inventory/internal/inventory"
-	"github.com/buger/jsonparser"
 )
 
 // ParseInventory walks the Terraform state JSON and extracts ansible_* resources
@@ -13,79 +15,83 @@ import (
 // ParseInventory walks the Terraform state JSON and extracts all ansible_host
 // and ansible_group resources, returning a structured Inventory.
 func ParseInventory(data []byte) *inventory.Inventory {
+	return ParseInventoryReader(bytes.NewReader(data))
+}
+
+// ParseInventoryReader streams Terraform state JSON from r and extracts
+// ansible_* resources to build an inventory compatible with the
+// ansible/ansible provider.
+func ParseInventoryReader(r io.Reader) *inventory.Inventory {
 	inv := inventory.New()
-	stack := [][]byte{data}
+	dec := jstream.NewDecoder(r, -1)
 
-	for len(stack) > 0 {
-		current := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		// Determine if this object is a resource we care about
-		if t, err := jsonparser.GetString(current, "type"); err == nil {
-			// Handle known ansible resources
-			switch t {
-			case "ansible_host":
-				var tmp struct {
-					Values struct {
-						Name      string            `json:"name"`
-						Groups    []string          `json:"groups"`
-						Variables map[string]string `json:"variables"`
-					} `json:"values"`
-				}
-				if err := json.Unmarshal(current, &tmp); err == nil {
-					inv.AddHost(&inventory.Host{
-						Name:      tmp.Values.Name,
-						Groups:    tmp.Values.Groups,
-						Variables: tmp.Values.Variables,
-					})
-				}
-			case "ansible_group":
-				var tmp struct {
-					Values struct {
-						Name      string            `json:"name"`
-						Children  []string          `json:"children"`
-						Variables map[string]string `json:"variables"`
-						Hosts     []string          `json:"hosts"`
-						Parents   []string          `json:"parents"`
-					} `json:"values"`
-				}
-				if err := json.Unmarshal(current, &tmp); err == nil {
-					inv.AddGroup(&inventory.Group{
-						Name:      tmp.Values.Name,
-						Children:  tmp.Values.Children,
-						Variables: tmp.Values.Variables,
-						Hosts:     tmp.Values.Hosts,
-						Parents:   tmp.Values.Parents,
-					})
-				}
-			case "ansible_inventory":
-				var tmp struct {
-					Values struct {
-						Variables map[string]string `json:"variables"`
-					} `json:"values"`
-				}
-				if err := json.Unmarshal(current, &tmp); err == nil {
-					inv.AddVars(tmp.Values.Variables)
-				}
-			}
+	for mv := range dec.Stream() {
+		if mv.ValueType != jstream.Object {
+			continue
 		}
+		obj, ok := mv.Value.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		t, _ := obj["type"].(string)
+		values, _ := obj["values"].(map[string]interface{})
 
-		// Recurse into child objects and arrays
-		jsonparser.ObjectEach(current, func(_ []byte, val []byte, dt jsonparser.ValueType, _ int) error {
-			if dt == jsonparser.Object || dt == jsonparser.Array {
-				stack = append(stack, val)
+		switch t {
+		case "ansible_host":
+			h := &inventory.Host{
+				Name:      getString(values["name"]),
+				Groups:    toStringSlice(values["groups"]),
+				Variables: toStringMap(values["variables"]),
 			}
-			return nil
-		})
-		jsonparser.ArrayEach(current, func(val []byte, dt jsonparser.ValueType, _ int, err error) {
-			if err != nil {
-				return
+			inv.AddHost(h)
+		case "ansible_group":
+			g := &inventory.Group{
+				Name:      getString(values["name"]),
+				Children:  toStringSlice(values["children"]),
+				Variables: toStringMap(values["variables"]),
+				Hosts:     toStringSlice(values["hosts"]),
+				Parents:   toStringSlice(values["parents"]),
 			}
-			if dt == jsonparser.Object || dt == jsonparser.Array {
-				stack = append(stack, val)
-			}
-		})
+			inv.AddGroup(g)
+		case "ansible_inventory":
+			inv.AddVars(toStringMap(values["variables"]))
+		}
 	}
 
 	return inv
+}
+
+func getString(v interface{}) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
+}
+
+func toStringSlice(v interface{}) []string {
+	arr, ok := v.([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(arr))
+	for _, x := range arr {
+		if s, ok := x.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func toStringMap(v interface{}) map[string]string {
+	m, ok := v.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, val := range m {
+		if s, ok := val.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
 }
