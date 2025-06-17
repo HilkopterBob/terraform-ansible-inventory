@@ -67,6 +67,10 @@ func TestOutputInventoryYAML(t *testing.T) {
 	if !ok || wh["test1"] == nil {
 		t.Fatalf("test1 missing from web group")
 	}
+	hv, _ := wh["test1"].(map[string]any)
+	if hv["ansible_host"] != "192.168.1.10" {
+		t.Fatalf("ansible_host missing in yaml")
+	}
 	vars, _ := all["vars"].(map[string]any)
 	if vars["env"] != "test" {
 		t.Fatalf("inventory vars missing")
@@ -86,5 +90,29 @@ func TestOutputInventoryINI(t *testing.T) {
 	idxGrp := strings.Index(out, "[web]")
 	if idxHost != -1 && idxGrp != -1 && idxHost < idxGrp {
 		t.Fatalf("host appears in [all] section:\n%s", out)
+	}
+}
+
+func TestYAMLvsINIParity(t *testing.T) {
+	inv := invFixture()
+	yamlOut, err := captureOutput(func() error { return OutputInventory(inv, "yaml") })
+	if err != nil {
+		t.Fatalf("yaml output error: %v", err)
+	}
+	iniOut, err := captureOutput(func() error { return OutputInventory(inv, "ini") })
+	if err != nil {
+		t.Fatalf("ini output error: %v", err)
+	}
+
+	var data map[string]any
+	if err := yaml.Unmarshal([]byte(yamlOut), &data); err != nil {
+		t.Fatalf("unmarshal yaml: %v", err)
+	}
+	yHost := data["all"].(map[string]any)["children"].(map[string]any)["web"].(map[string]any)["hosts"].(map[string]any)["test1"].(map[string]any)["ansible_host"]
+	if yHost != "192.168.1.10" {
+		t.Fatalf("unexpected yaml host ip: %v", yHost)
+	}
+	if !strings.Contains(iniOut, "test1 ansible_host=192.168.1.10") {
+		t.Fatalf("ini output missing host ip:\n%s", iniOut)
 	}
 }

@@ -50,19 +50,7 @@ func outputYAML(inv *inventory.Inventory) error {
 		if len(h.Groups) > 0 {
 			continue
 		}
-		hostVars := make(map[string]string)
-		for k, v := range h.Variables {
-			hostVars[k] = v
-		}
-		if ip, ok := hostVars["ip"]; ok {
-			hostVars["ansible_host"] = stripCIDR(ip)
-			delete(hostVars, "ip")
-		}
-		if len(hostVars) == 0 {
-			root.Hosts[h.Name] = struct{}{}
-		} else {
-			root.Hosts[h.Name] = hostVars
-		}
+		root.Hosts[h.Name] = hostToYAML(h)
 	}
 
 	// prepare groups recursively
@@ -85,7 +73,11 @@ func outputYAML(inv *inventory.Inventory) error {
 			if gy.Hosts == nil {
 				gy.Hosts = make(map[string]any)
 			}
-			gy.Hosts[host] = struct{}{}
+			if h, ok := inv.Hosts[host]; ok {
+				gy.Hosts[host] = hostToYAML(h)
+			} else {
+				gy.Hosts[host] = struct{}{}
+			}
 		}
 	}
 
@@ -101,6 +93,23 @@ func outputYAML(inv *inventory.Inventory) error {
 type stdoutWrapper struct{}
 
 func (stdoutWrapper) Write(p []byte) (int, error) { return fmt.Print(string(p)) }
+
+// hostToYAML returns either a map of variables including ansible_host or
+// an empty struct if no variables are present.
+func hostToYAML(h *inventory.Host) any {
+	vars := make(map[string]string)
+	for k, v := range h.Variables {
+		vars[k] = v
+	}
+	if ip, ok := vars["ip"]; ok {
+		vars["ansible_host"] = stripCIDR(ip)
+		delete(vars, "ip")
+	}
+	if len(vars) == 0 {
+		return struct{}{}
+	}
+	return vars
+}
 
 func ensureGroupYAML(root *groupYAML, name string) *groupYAML {
 	parts := []string{name}
