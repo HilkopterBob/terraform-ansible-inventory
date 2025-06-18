@@ -110,9 +110,9 @@ func TestParseGroupChildrenParents(t *testing.T) {
 	}
 	if _, ok := inv.Hosts["h2"]; !ok {
 		t.Fatalf("host h2 from grand child missing")
-  }
+	}
 }
-    
+
 func TestParseInventoryReader(t *testing.T) {
 	state := map[string]any{
 		"type": "ansible_inventory",
@@ -124,5 +124,36 @@ func TestParseInventoryReader(t *testing.T) {
 	inv := ParseInventoryReader(bytes.NewReader(buf))
 	if inv.Vars["env"] != "test" {
 		t.Fatalf("inventory vars not parsed")
+	}
+}
+
+func TestParseHostMetadataEnabled(t *testing.T) {
+	state := map[string]any{
+		"values": map[string]any{
+			"root_module": map[string]any{
+				"resources": []any{
+					map[string]any{
+						"type": "ansible_host",
+						"values": map[string]any{
+							"name":     "h1",
+							"enabled":  true,
+							"metadata": map[string]any{"role": "db"},
+						},
+					},
+				},
+			},
+		},
+	}
+	buf, _ := json.Marshal(state)
+	inv := ParseInventory(buf)
+	h, ok := inv.Hosts["h1"]
+	if !ok {
+		t.Fatalf("host missing")
+	}
+	if !h.Enabled {
+		t.Fatalf("enabled flag not parsed")
+	}
+	if h.Metadata["role"] != "db" {
+		t.Fatalf("metadata not parsed: %#v", h.Metadata)
 	}
 }

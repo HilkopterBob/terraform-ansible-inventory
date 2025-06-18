@@ -42,6 +42,8 @@ func ParseInventoryReader(r io.Reader) *inventory.Inventory {
 				Name:      getString(values["name"]),
 				Groups:    toStringSlice(values["groups"]),
 				Variables: toStringMap(values["variables"]),
+				Metadata:  toStringMap(values["metadata"]),
+				Enabled:   getBool(values["enabled"]),
 			}
 			inv.AddHost(h)
 		case "ansible_group":
@@ -94,4 +96,11 @@ func toStringMap(v interface{}) map[string]string {
 		}
 	}
 	return out
+}
+
+func getBool(v interface{}) bool {
+	if b, ok := v.(bool); ok {
+		return b
+	}
+	return false
 }
