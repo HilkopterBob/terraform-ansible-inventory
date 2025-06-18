@@ -153,7 +153,7 @@ all:
 env=prod
 
 [web]
-test1 ansible_host=192.168.1.10 os=linux ansible_disabled=true
+test1 ansible_host=192.168.1.10 os=linux
 
 [web:vars]
 tier=frontend
@@ -171,7 +171,7 @@ tier=frontend
         "os": "linux"
       },
       "Groups": ["web"],
-      "Enabled": false,
+      "Enabled": true,
       "Metadata": {}
     }
   },
