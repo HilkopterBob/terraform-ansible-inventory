@@ -42,6 +42,10 @@ func ParseInventoryReader(r io.Reader) (*inventory.Inventory, error) {
 				Name:      getString(values["name"]),
 				Groups:    toStringSlice(values["groups"]),
 				Variables: toStringMap(values["variables"]),
+				Enabled:   true,
+			}
+			if en, ok := values["enabled"].(bool); ok {
+				h.Enabled = en
 			}
 			inv.AddHost(h)
 		case "ansible_group":
