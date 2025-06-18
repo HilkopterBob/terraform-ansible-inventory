@@ -37,7 +37,10 @@ func TestParseInventory(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(state)
-	inv := ParseInventory(buf)
+	inv, err := ParseInventory(buf)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
 	if inv.Vars["env"] != "test" {
 		t.Fatalf("inventory vars not parsed")
 	}
@@ -88,7 +91,10 @@ func TestParseGroupChildrenParents(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(state)
-	inv := ParseInventory(buf)
+	inv, err := ParseInventory(buf)
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
 	c, ok := inv.Groups["child"]
 	if !ok {
 		t.Fatalf("child group missing")
@@ -110,9 +116,9 @@ func TestParseGroupChildrenParents(t *testing.T) {
 	}
 	if _, ok := inv.Hosts["h2"]; !ok {
 		t.Fatalf("host h2 from grand child missing")
-  }
+	}
 }
-    
+
 func TestParseInventoryReader(t *testing.T) {
 	state := map[string]any{
 		"type": "ansible_inventory",
@@ -121,8 +127,18 @@ func TestParseInventoryReader(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(state)
-	inv := ParseInventoryReader(bytes.NewReader(buf))
+	inv, err := ParseInventoryReader(bytes.NewReader(buf))
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
 	if inv.Vars["env"] != "test" {
 		t.Fatalf("inventory vars not parsed")
+	}
+}
+
+func TestParseInventoryReaderMalformed(t *testing.T) {
+	data := []byte("{invalid}")
+	if _, err := ParseInventoryReader(bytes.NewReader(data)); err == nil {
+		t.Fatal("expected error for malformed JSON")
 	}
 }

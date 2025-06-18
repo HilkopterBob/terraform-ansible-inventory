@@ -14,14 +14,14 @@ import (
 
 // ParseInventory walks the Terraform state JSON and extracts all ansible_host
 // and ansible_group resources, returning a structured Inventory.
-func ParseInventory(data []byte) *inventory.Inventory {
+func ParseInventory(data []byte) (*inventory.Inventory, error) {
 	return ParseInventoryReader(bytes.NewReader(data))
 }
 
 // ParseInventoryReader streams Terraform state JSON from r and extracts
 // ansible_* resources to build an inventory compatible with the
 // ansible/ansible provider.
-func ParseInventoryReader(r io.Reader) *inventory.Inventory {
+func ParseInventoryReader(r io.Reader) (*inventory.Inventory, error) {
 	inv := inventory.New()
 	dec := jstream.NewDecoder(r, -1)
 
@@ -58,7 +58,11 @@ func ParseInventoryReader(r io.Reader) *inventory.Inventory {
 		}
 	}
 
-	return inv
+	if err := dec.Err(); err != nil {
+		return nil, err
+	}
+
+	return inv, nil
 }
 
 func getString(v interface{}) string {

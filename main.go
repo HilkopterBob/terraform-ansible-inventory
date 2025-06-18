@@ -57,7 +57,10 @@ func main() {
 			}
 
 			// 2) Parse inventory from Terraform state
-			inv := parser.ParseInventory(data)
+			inv, err := parser.ParseInventory(data)
+			if err != nil {
+				return err
+			}
 
 			// 3) Apply filters
 			hosts := c.StringSlice("host")
