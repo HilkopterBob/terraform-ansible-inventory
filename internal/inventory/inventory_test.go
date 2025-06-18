@@ -119,3 +119,26 @@ func TestAddGroupCreatesHosts(t *testing.T) {
 		t.Fatalf("child group not created")
 	}
 }
+func TestMergeGroupHostDuplicatesEdge(t *testing.T) {
+	inv := New()
+	inv.AddGroup(&Group{Name: "dup", Hosts: []string{"h1", "h1"}})
+	if len(inv.Groups["dup"].Hosts) != 1 {
+		t.Fatalf("expected deduplicated host list, got %v", inv.Groups["dup"].Hosts)
+	}
+	inv.AddHost(&Host{Name: "h1", Groups: []string{"dup", "dup"}})
+	if len(inv.Hosts["h1"].Groups) != 1 {
+		t.Fatalf("expected deduplicated group list on host, got %v", inv.Hosts["h1"].Groups)
+	}
+}
+
+func TestAddHostInvalidName(t *testing.T) {
+	inv := New()
+	inv.AddHost(&Host{Name: "", Groups: []string{"web"}})
+	if _, ok := inv.Hosts[""]; !ok {
+		t.Fatalf("host with empty name not present")
+	}
+	inv.AddHost(&Host{Name: "", Groups: []string{"web"}})
+	if len(inv.Groups["web"].Hosts) != 1 {
+		t.Fatalf("expected deduped empty host in group, got %v", inv.Groups["web"].Hosts)
+	}
+}

@@ -127,10 +127,8 @@ func ensureGroupYAML(root *groupYAML, name string) *groupYAML {
 }
 
 func stripCIDR(ip string) string {
-	if idx := len(ip); idx > 0 {
-		if pos := index(ip, '/'); pos >= 0 {
-			return ip[:pos]
-		}
+	if pos := index(ip, '/'); pos >= 0 {
+		return ip[:pos]
 	}
 	return ip
 }
