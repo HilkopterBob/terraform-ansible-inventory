@@ -52,12 +52,17 @@ Download the latest release if you prefer not to build the binary yourself.
 
 ### Docker image
 
-A small container image is published for each release on
-[GitHub Container Registry](https://ghcr.io). Run it like any other command line
-tool or inside CI pipelines:
+Two container images are published on
+[GitHub Container Registry](https://ghcr.io). `terraform-ansible-inventory`
+contains only the inventory binary while the `-tf` tag additionally installs the
+latest Terraform release. Use the `-tf` variant when accessing remote state.
 
 ```bash
+# minimal image
 docker run --rm ghcr.io/HilkopterBob/terraform-ansible-inventory:latest --help
+
+# with Terraform installed
+docker run --rm ghcr.io/HilkopterBob/terraform-ansible-inventory:latest-tf terraform version
 ```
 
 In GitLab CI you must override the image entrypoint so the pipeline script can
