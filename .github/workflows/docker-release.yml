@@ -36,3 +36,14 @@ jobs:
           tags: |
             ghcr.io/hilkopterbob/terraform-ansible-inventory:${{ github.ref_name }}
             ghcr.io/hilkopterbob/terraform-ansible-inventory:latest
+      - name: Build and push image with Terraform
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          target: terraform
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/hilkopterbob/terraform-ansible-inventory:${{ github.ref_name }}-tf
+            ghcr.io/hilkopterbob/terraform-ansible-inventory:latest-tf

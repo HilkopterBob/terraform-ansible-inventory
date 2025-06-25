@@ -38,3 +38,14 @@ jobs:
           grep -q "ansible_host=192.168.1.10" out.ini
           docker run --rm -v $PWD:/data -w /data tfi:test -i smoketest.json -f json > out.json
           grep -q '"test1"' out.json
+      - name: Build Docker image with Terraform
+        run: docker build -t tfi:terraform --target terraform .
+      - name: Smoke test Terraform Docker image
+        run: |
+          echo 'Running Terraform Docker smoke test...'
+          docker run --rm -v $PWD:/data -w /data tfi:terraform -i smoketest.json -f yaml > out.yml
+          grep -q "test1" out.yml
+          docker run --rm -v $PWD:/data -w /data tfi:terraform -i smoketest.json -f ini > out.ini
+          grep -q "ansible_host=192.168.1.10" out.ini
+          docker run --rm -v $PWD:/data -w /data tfi:terraform -i smoketest.json -f json > out.json
+          grep -q '"test1"' out.json
